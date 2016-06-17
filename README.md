@@ -21,7 +21,7 @@ Note: This script is based on these tutorials:
 **DOMAIN**
 
 The domain to use for your parse-server, parse-dashboard as well as mongo database.
-For example, parse.mydomain.com means sets up your environment as follows:
+For example, parse.mydomain.com sets up your environment as follows:
 
 mongodb: parse.mydomain.com:27017
 
@@ -47,7 +47,7 @@ The script creates a dedicated "parse" user on your Ubuntu machine. Set the pass
 
 **EMAIL_ADDRESS**
 
-The email address to associate with the letsencrypt subscription.
+The email address to associate with the [letsencrypt](https://letsencrypt.org/) subscription.
 
 **DATABASE_NAME**
 
@@ -71,7 +71,7 @@ Credentials of your dashboard user.
 
 **TIMEZONE**
 
-Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
+Timezone to use. Enter it as Continent/City. For example: America/New_York
 
 **CLOUD_REPO_TYPE** (optional)
 
@@ -79,7 +79,7 @@ Defines the type of repo. Can be set to either "hg" or "git".
 
 **CLOUD_REPO_LINK** (optional)
 
-Command/URL to run after git clone or hg clone. This is usually the url to your repo. If additional params are needed for cloning, for example https://<my-repo-url> -b <branch add them to this command.
+Command/URL to run after git clone or hg clone. This is usually the url to your repo. If additional params are needed for cloning, for example https://my-repo-url -b branch add them to this command.
 
 **CLOUD_PATH** (optional)
 
@@ -87,5 +87,5 @@ Path of cloud folder within repository. If files are already on repo root level 
 
 **PRE_CLOUD_SCRIPT** (optional)
 
-In some cases additional requirements or dependencies are needed for your cloud code to run. In that case add this as a .sh file in your cloud repo and point this variable to the path of the script within the cloud folder.
+Path to a shell script you create within your cloud code repository, that installs any additional dependencies your cloud code needs to run.
 
