@@ -2,12 +2,12 @@
 
 # Set variables:
 DOMAIN="" # Domain to use for api and database.
-PARSE_PASS="" # Password for parse user.
+PARSE_DB_PASS="" # Password for parse user.
 SWAPSIZE="" # Swapsize for Ubuntu machine.
 USERNAME="" # Name of user to ssh to your Ubuntu machine with.
 PASSWORD="" # Password of user to ssh to your Ubuntu machine with.
 PARSE_USER_PASSWORD="" # Password of dedicated parse user.
-EMAIL_ADDRESS="" # Email address yo use with letsencrypt.
+EMAIL_ADDRESS="" # Email address to use with letsencrypt.
 
 DATABASE_NAME="" # Mongo DB name.
 MONGO_USER="" # Mongo DB admin user name.
@@ -127,7 +127,7 @@ rm mongo_admin.js
 # Configure MongoDB for migration.
 mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
 echo "use $DATABASE_NAME
-db.createUser({user: \"parse\",pwd: \"$PARSE_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
+db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
 exit" > mongo_parse.js
 
 mongo --port 27017 < mongo_parse.js
@@ -163,7 +163,7 @@ echo "{
     \"cwd\"         : \"/home/parse\",
     \"env\": {
       \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/home/parse/cloud/main.js\",
-      \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
+      \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
       \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
     }
@@ -257,7 +257,7 @@ parse-dashboard --config /home/parse/parse-dashboard.config --allowInsecureHTTP&
 
 # Update index.js with database uri.
 cd /root/parse-server-example/
-sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_PASS@$DOMAIN:27017\/$DATABASE_NAME?ssl=true/g" /root/parse-server-example/index.js
+sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_DB_PASS@$DOMAIN:27017\/$DATABASE_NAME?ssl=true/g" /root/parse-server-example/index.js
 sed -i "/appId:/c\  appId: \"$APPLICATION_ID\"," /root/parse-server-example/index.js
 sed -i "/masterKey:/c\  masterKey: \"$MASTER_KEY\"," /root/parse-server-example/index.js
 sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
@@ -285,4 +285,4 @@ cd /root/parse-server-example/
 npm start&
 
 # Ouptut migration string:
-echo "Use the following string for migration: $(tput bold)mongodb://parse:$PARSE_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true$(tput sgr0)"
+echo "Use the following string for migration: $(tput bold)mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true$(tput sgr0)"
