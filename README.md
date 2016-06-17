@@ -22,8 +22,11 @@ Note: This script is based on these tutorials:
 
 The domain to use for your parse-server, parse-dashboard as well as mongo database.
 For example, parse.mydomain.com means sets up your environment as follows:
+
 mongodb: parse.mydomain.com:27017
+
 parse-server: parse.mydomain.com/parse (internally forwards to localhost:1337)
+
 parse-dashboard: parse.mydomain.com:4040
 
 **PARSE_DB_PASS**
