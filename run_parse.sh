@@ -79,6 +79,24 @@ sudo apt-get install -y mongodb-org
 # Check everything is working.
 service mongod status
 
+# Create Mongo Admin user.
+echo "use admin
+db.createUser({user: \"$MONGO_USER\",pwd: \"$MONGO_PASS\", roles: [{role: \"userAdminAnyDatabase\", db: \"admin\"}]})
+use $DATABASE_NAME
+db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
+exit" > mongo.js
+mongo --port 27017 < mongo.js
+rm mongo.js
+
+# Configure MongoDB for migration.
+mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
+
+# Update mongod.conf file.
+cp ./mongod.conf /etc/mongod.conf
+
+# Restart MongoDB.
+sudo service mongod restart
+
 # 4. Parse Server.
 # Change dir to root folder.
 cd ~
@@ -116,28 +134,6 @@ sudo apt-get -y install cron
 echo -e "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
 sudo crontab tempcron
 rm tempcron
-
-# Create Mongo Admin user.
-echo "use admin
-db.createUser({user: \"$MONGO_USER\",pwd: \"$MONGO_PASS\", roles: [{role: \"userAdminAnyDatabase\", db: \"admin\"}]})
-exit" > mongo_admin.js
-mongo --port 27017 < mongo_admin.js
-rm mongo_admin.js
-
-# Configure MongoDB for migration.
-mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
-echo "use $DATABASE_NAME
-db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
-exit" > mongo_parse.js
-
-mongo --port 27017 < mongo_parse.js
-rm mongo_parse.js
-
-# Update mongod.conf file.
-cp ./mongod.conf /etc/mongod.conf
-
-# Restart MongoDB.
-sudo service mongod restart
 
 # Install Parse Server and PM2
 sudo npm install -g parse-server pm2
