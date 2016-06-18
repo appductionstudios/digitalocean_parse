@@ -89,7 +89,7 @@ sudo -E bash ./nodesource_setup.sh
 sudo apt-get install -y nodejs build-essential git
 
 # Install Example Parse Server App.
-git clone https://github.com/ParsePlatform/parse-server-example.git
+git clone https://github.com/ParsePlatform/parse-server-example.git /root/parse-server-example
 cd ~/parse-server-example
 npm install
 
@@ -129,12 +129,12 @@ mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase 
 echo "use $DATABASE_NAME
 db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
 exit" > mongo_parse.js
-
+/
 mongo --port 27017 < mongo_parse.js
 rm mongo_parse.js
 
 # Update mongod.conf file.
-cp /root/mongod.conf /etc/mongod.conf
+cp ./mongod.conf /etc/mongod.conf
 
 # Restart MongoDB.
 sudo service mongod restart
