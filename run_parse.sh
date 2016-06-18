@@ -129,7 +129,7 @@ mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase 
 echo "use $DATABASE_NAME
 db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
 exit" > mongo_parse.js
-/
+
 mongo --port 27017 < mongo_parse.js
 rm mongo_parse.js
 
