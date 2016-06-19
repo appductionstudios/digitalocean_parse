@@ -1,32 +1,35 @@
 # Execute while logged in as root.
 
+# Install jq to read from config file.
+sudo apt-get install -y jq
+
 # Set variables:
-DOMAIN="" # Domain to use for api and database.
-PARSE_DB_PASS="" # Password for parse user.
-SWAPSIZE="" # Swapsize for Ubuntu machine.
-USERNAME="" # Name of user to ssh to your Ubuntu machine with.
-PASSWORD="" # Password of user to ssh to your Ubuntu machine with.
-PARSE_USER_PASSWORD="" # Password of dedicated parse user.
-EMAIL_ADDRESS="" # Email address to use with letsencrypt.
+DOMAIN=$(jq -r '.DOMAIN' config.json) # Domain to use for api and database.
+PARSE_DB_PASS=$(jq -r '.PARSE_DB_PASS' config.json) # Password for parse user.
+SWAPSIZE=$(jq -r '.SWAPSIZE' config.json) # Swapsize for Ubuntu machine.
+USERNAME=$(jq -r '.USERNAME' config.json) # Name of user to ssh to your Ubuntu machine with.
+PASSWORD=$(jq -r '.PASSWORD' config.json) # Password of user to ssh to your Ubuntu machine with.
+PARSE_USER_PASSWORD=$(jq -r '.PARSE_USER_PASSWORD' config.json) # Password of dedicated parse user.
+EMAIL_ADDRESS=$(jq -r '.EMAIL_ADDRESS' config.json) # Email address to use with letsencrypt.
 
-DATABASE_NAME="" # Mongo DB name.
-MONGO_USER="" # Mongo DB admin user name.
-MONGO_PASS="" # Mongo DB admin user pass.
+DATABASE_NAME=$(jq -r '.DATABASE_NAME' config.json) # Mongo DB name.
+MONGO_USER=$(jq -r '.MONGO_USER' config.json) # Mongo DB admin user name.
+MONGO_PASS=$(jq -r '.MONGO_PASS' config.json) # Mongo DB admin user pass.
 
-APP_NAME="" # App name on parse-dashboard
-APPLICATION_ID="" # Application ID for Parse app to migrate.
-MASTER_KEY="" # Master Key for Parse app to migrate.
+APP_NAME=$(jq -r '.APP_NAME' config.json) # App name on parse-dashboard
+APPLICATION_ID=$(jq -r '.APPLICATION_ID' config.json) # Application ID for Parse app to migrate.
+MASTER_KEY=$(jq -r '.MASTER_KEY' config.json) # Master Key for Parse app to migrate.
 
-DASHBOARD_USERNAME="" # Username to login to parse-dashboard with.
-DASHBOARD_PASSWORD="" # Password to login to parse-dashboard with.
+DASHBOARD_USERNAME=$(jq -r '.DASHBOARD_USERNAME' config.json) # Username to login to parse-dashboard with.
+DASHBOARD_PASSWORD=$(jq -r '.DASHBOARD_PASSWORD' config.json) # Password to login to parse-dashboard with.
 
-TIMEZONE="" # Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
+TIMEZONE=$(jq -r '.TIMEZONE' config.json) # Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
 
 # (Optional)
-CLOUD_REPO_TYPE="" # Set to either "hg" or "git".
-CLOUD_REPO_LINK="" # Command/URL to run after git clone or hg clone.
-CLOUD_PATH="" # Path of cloud folder within repository. If files are already on repo root level enter ".".
-PRE_CLOUD_SCRIPT="" # Path to a shell script, that may install any missing requirements before installing your cloud code.
+CLOUD_REPO_TYPE=$(jq -r '.CLOUD_REPO_TYPE' config.json) # Set to either "hg" or "git".
+CLOUD_REPO_LINK=$(jq -r '.CLOUD_REPO_LINK' config.json) # Command/URL to run after git clone or hg clone.
+CLOUD_PATH=$(jq -r '.CLOUD_PATH' config.json) # Path of cloud folder within repository. If files are already on repo root level enter ".".
+PRE_CLOUD_SCRIPT=$(jq -r '.PRE_CLOUD_SCRIPT' config.json) # Path to a shell script, that may install any missing requirements before installing your cloud code.
 
 # @TODO: Make sure all variables are set.
 
@@ -150,13 +153,7 @@ sudo npm install -g parse-server pm2
 sudo useradd --create-home --system parse
 echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
 
-# @TODO WHY IS THIS LINE "SUDO SU PARSE CD ~" COMMENTED?
-# sudo su parse
-# cd ~
-
 mkdir -p /home/parse/cloud
-
-# @TODO: copy from cloud folder.
 
 echo "{
   \"apps\" : [{
@@ -179,10 +176,6 @@ pm2 start /home/parse/ecosystem.json
 
 # Save pm2 process.
 pm2 save
-
-# # Exit to regular sudo user.
-# @TODO WHY IS THIS LINE "EXIT" COMMENTED?
-# exit
 
 # Run initialization scripts as parse user.
 sudo pm2 startup ubuntu -u parse --hp /home/parse/
@@ -251,7 +244,6 @@ echo "{
 }" > /home/parse/parse-dashboard.config
 
 # @TODO SSL is not working yet
-# parse-dashboard --config parse-dashboard.config --sslKey /etc/letsencrypt/archive/a.beitify.com/privkey1.pem
 parse-dashboard --config /home/parse/parse-dashboard.config --allowInsecureHTTP&
 
 # Update index.js with database uri.

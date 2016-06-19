@@ -1,0 +1,27 @@
+{
+	"DOMAIN":"",
+	"PARSE_DB_PASS":"",
+	"SWAPSIZE":"1G",
+	"USERNAME":"ubuntu",
+	"PASSWORD":"",
+	"PARSE_USER_PASSWORD":"",
+	"EMAIL_ADDRESS":"",
+
+	"DATABASE_NAME":"myDB",
+	"MONGO_USER":"admin",
+	"MONGO_PASS":"",
+
+	"APP_NAME":"myApp",
+	"APPLICATION_ID":"",
+	"MASTER_KEY":"",
+
+	"DASHBOARD_USERNAME":"myuser",
+	"DASHBOARD_PASSWORD":"",
+
+	"TIMEZONE":"",
+
+	"CLOUD_REPO_TYPE":"",
+	"CLOUD_REPO_LINK":"",
+	"CLOUD_PATH":"",
+	"PRE_CLOUD_SCRIPT":""
+}
