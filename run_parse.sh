@@ -31,8 +31,6 @@ CLOUD_REPO_LINK=$(jq -r '.CLOUD_REPO_LINK' config.json) # Command/URL to run aft
 CLOUD_PATH=$(jq -r '.CLOUD_PATH' config.json) # Path of cloud folder within repository. If files are already on repo root level enter ".".
 PRE_CLOUD_SCRIPT=$(jq -r '.PRE_CLOUD_SCRIPT' config.json) # Path to a shell script, that may install any missing requirements before installing your cloud code.
 
-# @TODO: Make sure all variables are set.
-
 
 # 1. Create User.
 echo "$PASSWORD\n$PASSWORD\n" | sudo adduser $USERNAME
@@ -119,7 +117,7 @@ sudo apt-get update
 sudo apt-get -y install cron
 
 # Set Cron Job for auto renewal every Monday at 2:30. Restart Nginx every Monday at 2:35.
-echo -e "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
+echo "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
 sudo crontab tempcron
 rm tempcron
 
