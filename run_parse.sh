@@ -73,29 +73,14 @@ sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
 echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
 sudo apt-get update
 
+# Install kerberose lib.
+sudo apt-get install -y libkrb5-dev
+
 # Install and Verify MongoDB.
 sudo apt-get install -y mongodb-org
 
 # Check everything is working.
 service mongod status
-
-# Create Mongo Admin user.
-echo "use admin
-db.createUser({user: \"$MONGO_USER\",pwd: \"$MONGO_PASS\", roles: [{role: \"userAdminAnyDatabase\", db: \"admin\"}]})
-use $DATABASE_NAME
-db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
-exit" > mongo.js
-mongo --port 27017 < mongo.js
-rm mongo.js
-
-# Configure MongoDB for migration.
-mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
-
-# Update mongod.conf file.
-cp ./mongod.conf /etc/mongod.conf
-
-# Restart MongoDB.
-sudo service mongod restart
 
 # 4. Parse Server.
 # Change dir to root folder.
@@ -134,6 +119,29 @@ sudo apt-get -y install cron
 echo -e "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
 sudo crontab tempcron
 rm tempcron
+
+# Create Mongo Admin user.
+echo "use admin
+db.createUser({user: \"$MONGO_USER\",pwd: \"$MONGO_PASS\", roles: [{role: \"userAdminAnyDatabase\", db: \"admin\"}]})
+exit" > mongo_admin.js
+mongo --port 27017 < mongo_admin.js
+rm mongo_admin.js
+
+# Configure MongoDB for migration.
+mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
+echo "use $DATABASE_NAME
+db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
+exit" > mongo_parse.js
+
+mongo --port 27017 < mongo_parse.js
+rm mongo_parse.js
+
+# Update mongod.conf file.
+sudo sed -i "/bindIp: 127.0.0.1/c\  bindIp: 0.0.0.0\n  ssl:\n    mode: requireSSL\n    PEMKeyFile: /etc/ssl/mongo.pem" /etc/mongod.conf
+sudo sed -i '/#security/c\security:\n  authorization: enabled' /etc/mongod.conf
+
+# Restart MongoDB.
+sudo service mongod restart
 
 # Install Parse Server and PM2
 sudo npm install -g parse-server pm2
@@ -188,16 +196,13 @@ server {
     listen [::]:80 default_server ipv6only=on;
     return 301 https://$host$request_uri;
 }
-
 # HTTPS - serve HTML from /usr/share/nginx/html, proxy requests to /parse/
 # through to Parse Server
 server {
         listen 443;
         server_name $DOMAIN;
-
         root /usr/share/nginx/html;
         index index.html index.htm;
-
         ssl on;
         # Use certificate and key provided by Let's Encrypt:
         ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
@@ -206,7 +211,6 @@ server {
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
         ssl_prefer_server_ciphers on;
         ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
-
         # Pass requests for /parse/ to Parse Server instance at localhost:1337
         location /parse/ {
                 # proxy_set_header X-Real-IP $remote_addr;
@@ -217,7 +221,6 @@ server {
                 # proxy_set_header Host $http_host;
                 proxy_redirect off;
         }
-
         location / {
                 try_files $uri $uri/ =404;
         }
