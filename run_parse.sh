@@ -104,7 +104,6 @@ cd /opt/letsencrypt
 
 # Retrieve Initial Certificate
 sudo ./letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos
-
 # Configure MongoDB for Migration.
 sudo cat /etc/letsencrypt/archive/$DOMAIN/fullchain1.pem | sudo tee -a /etc/ssl/mongo.pem
 sudo cat /etc/letsencrypt/archive/$DOMAIN/privkey1.pem | sudo tee -a /etc/ssl/mongo.pem
@@ -250,6 +249,49 @@ sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_DB_PASS@$DOM
 sed -i "/appId:/c\  appId: \"$APPLICATION_ID\"," /root/parse-server-example/index.js
 sed -i "/masterKey:/c\  masterKey: \"$MASTER_KEY\"," /root/parse-server-example/index.js
 sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
+
+# Prepare for background jobs using agenda.
+# Install agenda.
+npm install agenda
+
+# Create jobs.js file.
+echo "var Agenda = require('agenda');
+
+var mongoConnectionString = 'mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true';
+var agenda = new Agenda({db: {address: mongoConnectionString}});
+
+// Asks Agenda to check for new tasks every minute.
+agenda.processEvery('1 minute');
+
+var Parse = require('parse/node');
+Parse.initialize('$APPLICATION_ID');
+Parse.serverURL = 'http://localhost:1337/parse';
+
+agenda.define('myScheduledTask', function(job, done) {
+    // Your code here. For example:
+    // var myClass = Parse.Object.extend('myClass');
+    // var obj = new myClass();
+    // obj.set('attr', 'myval');
+    // obj.save();
+    console.log('Running scheduled task ...');
+    done();
+});
+
+agenda.on('ready', function() {
+  agenda.every('5 minutes', 'myScheduledTask', {}, {
+    timezone: '$TIMEZONE'
+  });
+
+  // Alternatively, you could also do:
+  // agenda.every('*/5 * * * *', 'myScheduledTask', {}, {
+  //  timezone: '$TIMEZONE'
+  //});
+
+  agenda.start();
+});" > jobs.js
+
+# Start agenda jobs with index.js.
+sed -i '/var path/a\var jobs = require("./jobs");' /root/parse-server-example/index.js
 
 # Pull cloud code repo, if any.
 if [ "$CLOUD_REPO_LINK" != "" ] ; then
