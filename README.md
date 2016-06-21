@@ -16,6 +16,10 @@ Note: This script is based on these tutorials:
 
 * [Migrate A Parse App To Parse Server](https://www.digitalocean.com/community/tutorials/how-to-migrate-a-parse-app-to-parse-server-on-ubuntu-14-04)
 
+## Backgrounds jobs.
+
+The script uses [Agenda](https://github.com/rschmukler/agenda) for backgrounds jobs. After running the script open **/root/parse-server-example/jobs.js** and add your jobs. Refer to the example task under the created jobs.js file and Agenda's [github](https://github.com/rschmukler/agenda) for more information on how to use and configure background jobs.
+
 ## Variable description.
 
 **DOMAIN**
