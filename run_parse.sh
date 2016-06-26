@@ -143,40 +143,6 @@ sudo sed -i '/#security/c\security:\n  authorization: enabled' /etc/mongod.conf
 # Restart MongoDB.
 sudo service mongod restart
 
-# Install Parse Server and PM2
-sudo npm install -g parse-server pm2
-
-# Create Dedicated Parse User
-sudo useradd --create-home --system parse
-echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
-
-mkdir -p /home/parse/cloud
-
-echo "{
-  \"apps\" : [{
-    \"name\"        : \"parse-wrapper\",
-    \"script\"      : \"/usr/bin/parse-server\",
-    \"watch\"       : true,
-    \"merge_logs\"  : true,
-    \"cwd\"         : \"/home/parse\",
-    \"env\": {
-      \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/home/parse/cloud/main.js\",
-      \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
-      \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
-      \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
-    }
-  }]
-}" > /home/parse/ecosystem.json
-
-# Run the script with pm2.
-pm2 start /home/parse/ecosystem.json
-
-# Save pm2 process.
-pm2 save
-
-# Run initialization scripts as parse user.
-sudo pm2 startup ubuntu -u parse --hp /home/parse/
-
 # Install and configure Nginx
 sudo apt-get install -y nginx
 
@@ -203,12 +169,21 @@ server {
         ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
         # Pass requests for /parse/ to Parse Server instance at localhost:1337
         location /parse/ {
-                # proxy_set_header X-Real-IP $remote_addr;
-                # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                 proxy_set_header X-NginX-Proxy true;
                 proxy_pass http://localhost:1337/parse/;
                 proxy_ssl_session_reuse off;
-                # proxy_set_header Host $http_host;
+                proxy_set_header Host \$http_host;
+                proxy_redirect off;
+        }
+        location /dashboard/ {
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-NginX-Proxy true;
+                proxy_pass http://localhost:4040/dashboard/;
+                proxy_ssl_session_reuse off;
+                proxy_set_header Host \$http_host;
                 proxy_redirect off;
         }
         location / {
@@ -218,12 +193,22 @@ server {
 
 sudo service nginx restart
 
+# Update index.js with database uri.
+cd /root/parse-server-example/
+sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_DB_PASS@$DOMAIN:27017\/$DATABASE_NAME?ssl=true/g" /root/parse-server-example/index.js
+sed -i "/appId:/c\  appId: \"$APPLICATION_ID\"," /root/parse-server-example/index.js
+sed -i "/masterKey:/c\  masterKey: \"$MASTER_KEY\"," /root/parse-server-example/index.js
+sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
+
 # PARSE DASHBOARD
 # Install parse-dashboard
-npm install -g parse-dashboard
+npm install parse-dashboard
 
-# Write parse-dashboard config file.
-echo "{
+# Add parse-dashboard to index.js.
+# @TODO: run parse-dashboard with SSL.
+sed -i '/var ParseServer/a\var ParseDashboard = require("parse-dashboard");' /root/parse-server-example/index.js
+echo "// Set up parse-dashboard.
+var dashboard = new ParseDashboard({  
   \"apps\": [
     {
       \"serverURL\": \"https://$DOMAIN/parse\",
@@ -238,17 +223,21 @@ echo "{
       \"pass\":\"$DASHBOARD_PASSWORD\"
     }
   ]
-}" > /home/parse/parse-dashboard.config
+}, true);
 
-# @TODO SSL is not working yet
-parse-dashboard --config /home/parse/parse-dashboard.config --allowInsecureHTTP&
+var dashboard_app = express();
 
-# Update index.js with database uri.
-cd /root/parse-server-example/
-sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_DB_PASS@$DOMAIN:27017\/$DATABASE_NAME?ssl=true/g" /root/parse-server-example/index.js
-sed -i "/appId:/c\  appId: \"$APPLICATION_ID\"," /root/parse-server-example/index.js
-sed -i "/masterKey:/c\  masterKey: \"$MASTER_KEY\"," /root/parse-server-example/index.js
-sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
+// Serve the Parse Dashboard on the /dashboard URL prefix
+dashboard_app.use('/dashboard', dashboard);  
+
+dashboard_app.get('/', function(req, res) {  
+  res.status(200).send('Parse Dashboard App');
+});
+
+var httpServerDash = require('http').createServer(dashboard_app);  
+httpServerDash.listen(4040, function() {  
+    console.log('parse-dashboard running on port 4040.');
+});" >> /root/parse-server-example/index.js
 
 # Prepare for background jobs using agenda.
 # Install agenda.
@@ -313,7 +302,42 @@ fi
 
 # Run parse server example.
 cd /root/parse-server-example/
-npm start&
+
+# Install Parse Server and PM2
+sudo npm install -g parse-server pm2
+
+# Create Dedicated Parse User
+sudo useradd --create-home --system parse
+echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
+
+mkdir -p /home/parse/cloud
+
+# @TODO figure out why it fails with watch=true.
+echo "{
+  \"apps\" : [{
+    \"name\"        : \"parse-wrapper\",
+    \"script\"      : \"/root/parse-server-example/index.js\",
+    \"watch\"       : false,
+    \"merge_logs\"  : true,
+    \"cwd\"         : \"/root/parse-server-example\",
+    \"env\": {
+      \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/root/parse-server-example/cloud/main.js\",
+      \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
+      \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
+      \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
+    }
+  }]
+}" > /home/parse/ecosystem.json
+
+# Run the script with pm2.
+pm2 start /home/parse/ecosystem.json
+
+# Save pm2 process.
+pm2 save
+
+# Run initialization scripts as parse user.
+sudo pm2 startup ubuntu -u parse --hp /home/parse/
 
 # Ouptut migration string:
 echo "Use the following string for migration: $(tput bold)mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true$(tput sgr0)"
+
