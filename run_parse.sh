@@ -336,7 +336,7 @@ pm2 start /home/parse/ecosystem.json
 pm2 save
 
 # Run initialization scripts as parse user.
-sudo pm2 startup ubuntu -u parse --hp /home/parse/
+sudo pm2 startup ubuntu -u root --hp /root/
 
 # Ouptut migration string:
 echo "Use the following string for migration: $(tput bold)mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true$(tput sgr0)"
