@@ -31,7 +31,7 @@ mongodb: parse.mydomain.com:27017
 
 parse-server: parse.mydomain.com/parse (internally forwards to localhost:1337)
 
-parse-dashboard: parse.mydomain.com:4040
+parse-dashboard: parse.mydomain.com:4040/dashboard
 
 **PARSE_DB_PASS**
 
