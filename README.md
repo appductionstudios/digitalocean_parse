@@ -10,6 +10,8 @@
 
 5. Copy the generated **mongodb://** url and use it for your migration on Parse.com.
 
+6. Copy your background jobs into /root/parse-server-example/jobs.js file.
+
 Note: This script is based on these tutorials:
 
 * [Install Parse Server Example](https://www.digitalocean.com/community/tutorials/how-to-run-parse-server-on-ubuntu-14-04)
