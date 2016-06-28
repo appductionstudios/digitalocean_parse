@@ -49,7 +49,6 @@ service ssh restart
 sudo ufw allow ssh
 sudo ufw --force enable
 ufw allow 443
-ufw allow 4040
 ufw allow 27017
 
 # Configure timezones.
@@ -181,7 +180,7 @@ server {
                 proxy_set_header X-Real-IP \$remote_addr;
                 proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                 proxy_set_header X-NginX-Proxy true;
-                proxy_pass http://localhost:4040/dashboard/;
+                proxy_pass https://localhost:4040/dashboard/;
                 proxy_ssl_session_reuse off;
                 proxy_set_header Host \$http_host;
                 proxy_redirect off;
@@ -205,7 +204,6 @@ sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/par
 npm install parse-dashboard
 
 # Add parse-dashboard to index.js.
-# @TODO: run parse-dashboard with SSL.
 sed -i '/var ParseServer/a\var ParseDashboard = require("parse-dashboard");' /root/parse-server-example/index.js
 echo "// Set up parse-dashboard.
 var dashboard = new ParseDashboard({  
@@ -223,7 +221,7 @@ var dashboard = new ParseDashboard({
       \"pass\":\"$DASHBOARD_PASSWORD\"
     }
   ]
-}, true);
+});
 
 var dashboard_app = express();
 
@@ -325,6 +323,9 @@ echo "{
       \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
       \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
+      \"PARSE_DASHBOARD_SSL_KEY\": \"/etc/letsencrypt/live/$DOMAIN/privkey.pem\",
+      \"PARSE_DASHBOARD_SSL_CERT\": \"/etc/letsencrypt/live/$DOMAIN/fullchain.pem\",
+      \"MOUNT_PATH\": \"/dashboard\"
     }
   }]
 }" > /home/parse/ecosystem.json
