@@ -194,48 +194,11 @@ sudo service nginx restart
 
 # Update index.js with database uri.
 cd /root/parse-server-example/
-sed -i "s/mongodb:\/\/localhost:27017\/dev/mongodb:\/\/parse:$PARSE_DB_PASS@$DOMAIN:27017\/$DATABASE_NAME?ssl=true/g" /root/parse-server-example/index.js
-sed -i "/appId:/c\  appId: \"$APPLICATION_ID\"," /root/parse-server-example/index.js
-sed -i "/masterKey:/c\  masterKey: \"$MASTER_KEY\"," /root/parse-server-example/index.js
 sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
 
 # PARSE DASHBOARD
 # Install parse-dashboard
-npm install parse-dashboard
-
-# Add parse-dashboard to index.js.
-sed -i '/var ParseServer/a\var ParseDashboard = require("parse-dashboard");' /root/parse-server-example/index.js
-echo "// Set up parse-dashboard.
-var dashboard = new ParseDashboard({  
-  \"apps\": [
-    {
-      \"serverURL\": \"https://$DOMAIN/parse\",
-      \"appId\": \"$APPLICATION_ID\",
-      \"masterKey\": \"$MASTER_KEY\",
-      \"appName\": \"$APP_NAME\"
-    }
-  ],
-  \"users\": [
-    {
-      \"user\":\"$DASHBOARD_USERNAME\",
-      \"pass\":\"$DASHBOARD_PASSWORD\"
-    }
-  ]
-});
-
-var dashboard_app = express();
-
-// Serve the Parse Dashboard on the /dashboard URL prefix
-dashboard_app.use('/dashboard', dashboard);  
-
-dashboard_app.get('/', function(req, res) {  
-  res.status(200).send('Parse Dashboard App');
-});
-
-var httpServerDash = require('http').createServer(dashboard_app);  
-httpServerDash.listen(4040, function() {  
-    console.log('parse-dashboard running on port 4040.');
-});" >> /root/parse-server-example/index.js
+npm install -g parse-dashboard
 
 # Prepare for background jobs using agenda.
 # Install agenda.
@@ -311,9 +274,11 @@ echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
 mkdir -p /home/parse/cloud
 
 # @TODO figure out why it fails with watch=true.
+# The seemingly duplicate data ensures supporting both parse-server
+# as well as the slightly outdated parse-server-example module.
 echo "{
   \"apps\" : [{
-    \"name\"        : \"parse-wrapper\",
+    \"name\"        : \"parse-server-wrapper\",
     \"script\"      : \"/root/parse-server-example/index.js\",
     \"watch\"       : false,
     \"merge_logs\"  : true,
@@ -323,10 +288,23 @@ echo "{
       \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
       \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
+
+      \"CLOUD_CODE_MAIN\": \"/root/parse-server-example/cloud/main.js\",
+      \"DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
+      \"APP_ID\": \"$APPLICATION_ID\",
+      \"MASTER_KEY\": \"$MASTER_KEY\",
+
       \"PARSE_DASHBOARD_SSL_KEY\": \"/etc/letsencrypt/live/$DOMAIN/privkey.pem\",
       \"PARSE_DASHBOARD_SSL_CERT\": \"/etc/letsencrypt/live/$DOMAIN/fullchain.pem\",
       \"MOUNT_PATH\": \"/dashboard\"
     }
+  }, {
+    \"name\"        : \"parse-dashboard-wrapper\",
+    \"script\"      : \"/usr/bin/parse-dashboard\",
+    \"watch\"       : false,
+    \"merge_logs\"  : true,
+    \"cwd\"         : \"/root/parse-server-example\",
+    \"args\"         : \"--appId $APPLICATION_ID --masterKey $MASTER_KEY --serverURL https://$DOMAIN/parse --port 4040 --sslKey /etc/letsencrypt/live/$DOMAIN/privkey.pem --sslCert /etc/letsencrypt/live/$DOMAIN/fullchain.pem --appName $APP_NAME --mountPath /dashboard\"
   }]
 }" > /home/parse/ecosystem.json
 
