@@ -87,8 +87,7 @@ service mongod status
 cd ~
 
 # Install latest Node.js.
-curl -sL https://deb.nodesource.com/setup_5.x -o nodesource_setup.sh
-sudo -E bash ./nodesource_setup.sh
+curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 sudo apt-get install -y nodejs build-essential git
 
 # Install Example Parse Server App.
@@ -199,49 +198,6 @@ sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/par
 # PARSE DASHBOARD
 # Install parse-dashboard
 npm install -g parse-dashboard
-
-# Prepare for background jobs using agenda.
-# Install agenda.
-npm install agenda
-
-# Create jobs.js file.
-echo "var Agenda = require('agenda');
-
-var mongoConnectionString = 'mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true';
-var agenda = new Agenda({db: {address: mongoConnectionString}});
-
-// Asks Agenda to check for new tasks every minute.
-agenda.processEvery('1 minute');
-
-var Parse = require('parse/node');
-Parse.initialize('$APPLICATION_ID');
-Parse.serverURL = 'http://localhost:1337/parse';
-
-agenda.define('myScheduledTask', function(job, done) {
-    // Your code here. For example:
-    // var myClass = Parse.Object.extend('myClass');
-    // var obj = new myClass();
-    // obj.set('attr', 'myval');
-    // obj.save();
-    console.log('Running scheduled task ...');
-    done();
-});
-
-agenda.on('ready', function() {
-  agenda.every('5 minutes', 'myScheduledTask', {}, {
-    timezone: '$TIMEZONE'
-  });
-
-  // Alternatively, you could also do:
-  // agenda.every('*/5 * * * *', 'myScheduledTask', {}, {
-  //  timezone: '$TIMEZONE'
-  //});
-
-  agenda.start();
-});" > jobs.js
-
-# Start agenda jobs with index.js.
-sed -i '/var path/a\var jobs = require("./jobs");' /root/parse-server-example/index.js
 
 # Pull cloud code repo, if any.
 if [ "$CLOUD_REPO_LINK" != "" ] ; then
