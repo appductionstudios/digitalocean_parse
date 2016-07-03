@@ -4,13 +4,13 @@
 
 2. Setup a hostname for your DigitalOcean machine. Tutorials can be found [here](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean) and [here](https://www.digitalocean.com/community/tutorials/how-to-point-to-digitalocean-nameservers-from-common-domain-registrars).
 
-3. Pull this repo into your machine under /root.
+3. Pull this repo into your machine.
 
-4. On your machine set all variables in **/root/migrate_parse.sh** then run the script.
+4. On your machine set all variables in **./config.json** then run `sh ./migrate_parse.sh`.
 
 5. Copy the generated **mongodb://** url and use it for your migration on Parse.com.
 
-6. Copy your background jobs into /root/parse-server-example/jobs.js file.
+6. For background jobs run `sh add_jobs.sh`. Then copy your background jobs to /root/parse-server-example/jobs.js file. And run `pm2 restart parse-server-wrapper`. Make sure to copy each job separately to ensure following the agenda syntax.
 
 Note: This script is based on these tutorials:
 
