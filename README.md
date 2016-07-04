@@ -12,6 +12,8 @@
 
 6. For background jobs run `sh add_jobs.sh`. Then copy your background jobs to /root/parse-server-example/jobs.js file. And run `pm2 restart parse-server-wrapper`. Make sure to copy each job separately to ensure following the agenda syntax.
 
+7. To sync the cloud code with your repo run `sh parse_deploy.sh`. Make sure you have the cloud params set in your config.json before running this.
+
 Note: This script is based on these tutorials:
 
 * [Install Parse Server Example](https://www.digitalocean.com/community/tutorials/how-to-run-parse-server-on-ubuntu-14-04)
