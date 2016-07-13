@@ -137,6 +137,7 @@ rm mongo_parse.js
 # Update mongod.conf file.
 sudo sed -i "/bindIp: 127.0.0.1/c\  bindIp: 0.0.0.0\n  ssl:\n    mode: requireSSL\n    PEMKeyFile: /etc/ssl/mongo.pem" /etc/mongod.conf
 sudo sed -i '/#security/c\security:\n  authorization: enabled' /etc/mongod.conf
+echo "setParameter:\n  failIndexKeyTooLong: false" >> /etc/mongod.conf
 
 # Restart MongoDB.
 sudo service mongod restart
