@@ -121,11 +121,9 @@ mongo --port 27017 < mongo_admin.js
 rm mongo_admin.js
 
 # Configure MongoDB for migration.
-mongo --port 27017 --ssl --sslAllowInvalidCertificates --authenticationDatabase admin --username $MONGO_USER --password $MONGO_PASS
 echo "use $DATABASE_NAME
 db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
 exit" > mongo_parse.js
-
 mongo --port 27017 < mongo_parse.js
 rm mongo_parse.js
 
