@@ -4,7 +4,7 @@ DATABASE_NAME=$(jq -r '.DATABASE_NAME' config.json) # Mongo DB name.
 APPLICATION_ID=$(jq -r '.APPLICATION_ID' config.json) # Application ID for Parse app to migrate.
 TIMEZONE=$(jq -r '.TIMEZONE' config.json) # Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
 
-cd /root/parse-server-example
+cd /home/parse
 
 # Prepare for background jobs using agenda.
 # Install agenda.
@@ -19,7 +19,7 @@ var agenda = new Agenda({db: {address: mongoConnectionString}});
 // Asks Agenda to check for new tasks every minute.
 agenda.processEvery('1 minute');
 
-var Parse = require('parse/node');
+var Parse = require('/usr/lib/node_modules/parse-server/node_modules/parse/node');
 Parse.initialize('$APPLICATION_ID');
 Parse.serverURL = 'http://localhost:1337/parse';
 
@@ -44,9 +44,15 @@ agenda.on('ready', function() {
   //});
 
   agenda.start();
-});" > jobs.js
+});" > /home/parse/jobs.js
 
 # # Start agenda jobs with index.js.
-sed -i '/var path/a\var jobs = require("./jobs");' /root/parse-server-example/index.js
+sed -i '/}]/c\  },\n  {\n    "name"        : "parse-jobs-wrapper",\n    "script"      : "/home/parse/jobs.js",\n    "watch"       : false,\n    "merge_logs"  : true,\n    "cwd"         : "/home/parse",\n  }]' /home/parse/ecosystem.json
 
-pm2 restart parse-server-wrapper
+pm2 restart /home/parse/ecosystem.json
+
+# Save pm2 process.
+pm2 save
+
+# Run initialization scripts as parse user.
+sudo pm2 startup ubuntu -u root --hp /root/
