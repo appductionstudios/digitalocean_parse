@@ -90,11 +90,6 @@ cd ~
 curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
 sudo apt-get install -y nodejs build-essential git
 
-# Install Example Parse Server App.
-git clone https://github.com/ParsePlatform/parse-server-example.git /root/parse-server-example
-cd ~/parse-server-example
-npm install
-
 # Install Let's Encrypt and Dependencies.
 sudo apt-get -y install git bc
 sudo git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
@@ -192,13 +187,16 @@ server {
 
 sudo service nginx restart
 
-# Update index.js with database uri.
-cd /root/parse-server-example/
-sed -i '/serverURL:/a\  publicServerURL: "https://'"$DOMAIN"'/parse",' /root/parse-server-example/index.js
-
 # PARSE DASHBOARD
 # Install parse-dashboard
 npm install -g parse-dashboard
+
+
+# Create Dedicated Parse User
+sudo useradd --create-home --system parse
+echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
+
+mkdir -p /home/parse/cloud
 
 # Pull cloud code repo, if any.
 if [ "$CLOUD_REPO_LINK" != "" ] ; then
@@ -209,7 +207,7 @@ if [ "$CLOUD_REPO_LINK" != "" ] ; then
       git clone $CLOUD_REPO_LINK /root/cloud_dir
   fi
   cd /root/cloud_dir/$CLOUD_PATH
-  cp * /root/parse-server-example/cloud
+  cp * /home/parse/cloud
 else
   echo "No cloud code repo supplied."
 fi
@@ -218,38 +216,24 @@ if [ "$PRE_CLOUD_SCRIPT" != "" ] ; then
   sudo sh /root/cloud_dir/$PRE_CLOUD_SCRIPT
 fi
 
-# Run parse server example.
-cd /root/parse-server-example/
-
 # Install Parse Server and PM2
 sudo npm install -g parse-server pm2
 
-# Create Dedicated Parse User
-sudo useradd --create-home --system parse
-echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
-
-mkdir -p /home/parse/cloud
-
 # @TODO figure out why it fails with watch=true.
-# The seemingly duplicate data ensures supporting both parse-server
-# as well as the slightly outdated parse-server-example module.
 echo "{
   \"apps\" : [{
     \"name\"        : \"parse-server-wrapper\",
-    \"script\"      : \"/root/parse-server-example/index.js\",
+    \"script\"      : \"/usr/bin/parse-server\",
     \"watch\"       : false,
     \"merge_logs\"  : true,
-    \"cwd\"         : \"/root/parse-server-example\",
+    \"cwd\"         : \"/home/parse\",
     \"env\": {
-      \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/root/parse-server-example/cloud/main.js\",
+      \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/home/parse/cloud/main.js\",
       \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
       \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
-
-      \"CLOUD_CODE_MAIN\": \"/root/parse-server-example/cloud/main.js\",
-      \"DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
-      \"APP_ID\": \"$APPLICATION_ID\",
-      \"MASTER_KEY\": \"$MASTER_KEY\",
+      \"PARSE_PUBLIC_SERVER_URL\": \"https://$DOMAIN/parse\",
+      \"PARSE_SERVER_MOUNT_PATH\": \"/parse\",
 
       \"PARSE_DASHBOARD_SSL_KEY\": \"/etc/letsencrypt/live/$DOMAIN/privkey.pem\",
       \"PARSE_DASHBOARD_SSL_CERT\": \"/etc/letsencrypt/live/$DOMAIN/fullchain.pem\",
@@ -260,7 +244,7 @@ echo "{
     \"script\"      : \"/usr/bin/parse-dashboard\",
     \"watch\"       : false,
     \"merge_logs\"  : true,
-    \"cwd\"         : \"/root/parse-server-example\",
+    \"cwd\"         : \"/home/parse\",
     \"args\"         : \"--appId $APPLICATION_ID --masterKey $MASTER_KEY --serverURL https://$DOMAIN/parse --port 4040 --sslKey /etc/letsencrypt/live/$DOMAIN/privkey.pem --sslCert /etc/letsencrypt/live/$DOMAIN/fullchain.pem --appName $APP_NAME --mountPath /dashboard\"
   }]
 }" > /home/parse/ecosystem.json
