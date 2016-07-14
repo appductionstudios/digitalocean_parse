@@ -6,7 +6,7 @@
 
 3. Pull this repo into your machine.
 
-4. On your machine set all variables in **./config.json** then run `sh ./migrate_parse.sh`.
+4. On your machine set all variables in **./config.json** then run `sh ./run_parse.sh`.
 
 5. Copy the generated **mongodb://** url and use it for your migration on Parse.com.
 
