@@ -1,5 +1,21 @@
 # Execute while logged in as root.
 
+if ! [ $(id -u) = 0 ]; then
+   echo "$(tput bold)$(tput setaf 1)Script must be executed as root.$(tput sgr0)"
+   exit 1
+fi
+
+# Add Mongo before updating to avoid updating multiple times.
+
+# Import public key.
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+
+# Create a List File.
+echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
+
+# Run update before attempting to install packages.
+sudo apt-get update
+
 # Install jq to read from config file.
 sudo apt-get install -y jq
 
@@ -33,10 +49,7 @@ PRE_CLOUD_SCRIPT=$(jq -r '.PRE_CLOUD_SCRIPT' config.json) # Path to a shell scri
 
 
 # 1. Create User.
-echo "$PASSWORD\n$PASSWORD\n" | sudo adduser $USERNAME
-
-# Add user to root group.
-sudo gpasswd -a $USERNAME sudo
+useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
 
 # Open configuration file as root. Change PermitRootLogin to no.
 sudo sed -i '/PermitRootLogin yes/c\PermitRootLogin no' /etc/ssh/sshd_config
@@ -55,7 +68,6 @@ ufw allow 27017
 sudo timedatectl set-timezone $TIMEZONE
 
 # Configure NTP synchronization.
-sudo apt-get update
 sudo apt-get install -y ntp
 
 # Create swap file.
@@ -66,12 +78,6 @@ sudo swapon /swapfile
 sudo sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 
 # 3. Install MongoDB.
-# Import public key.
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-
-# Create a List File.
-echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
-sudo apt-get update
 
 # Install kerberose lib.
 sudo apt-get install -y libkrb5-dev
@@ -105,7 +111,6 @@ sudo chown mongodb:mongodb /etc/ssl/mongo.pem
 sudo chmod 600 /etc/ssl/mongo.pem
 
 # Install Cron.
-sudo apt-get update
 sudo apt-get -y install cron
 
 # Set Cron Job for auto renewal every Monday at 2:30. Restart Nginx every Monday at 2:35.
@@ -189,10 +194,8 @@ sudo service nginx restart
 # Install parse-dashboard
 npm install -g parse-dashboard
 
-
 # Create Dedicated Parse User
-sudo useradd --create-home --system parse
-echo "$PARSE_USER_PASSWORD\n$PARSE_USER_PASSWORD\n" | sudo passwd parse
+useradd --create-home --system parse -p $(perl -e "print crypt($PARSE_USER_PASSWORD,'sa');")
 
 mkdir -p /home/parse/cloud
 
