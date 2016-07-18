@@ -1,27 +1,27 @@
 {
-	"DOMAIN":"",
-	"PARSE_DB_PASS":"",
+	"DOMAIN":"www.example.com",
+	"PARSE_DB_PASS":"parsepass",
 	"SWAPSIZE":"1G",
 	"USERNAME":"ubuntu",
-	"PASSWORD":"",
-	"PARSE_USER_PASSWORD":"",
-	"EMAIL_ADDRESS":"",
+	"PASSWORD":"ubuntupass",
+	"PARSE_USER_PASSWORD":"parsepass",
+	"EMAIL_ADDRESS":"mail@example.com",
 
-	"DATABASE_NAME":"myDB",
+	"DATABASE_NAME":"mydatabase",
 	"MONGO_USER":"admin",
-	"MONGO_PASS":"",
+	"MONGO_PASS":"admin",
 
 	"APP_NAME":"myApp",
-	"APPLICATION_ID":"",
-	"MASTER_KEY":"",
+	"APPLICATION_ID":"myAppId",
+	"MASTER_KEY":"myMasterKey",
 
-	"DASHBOARD_USERNAME":"myuser",
-	"DASHBOARD_PASSWORD":"",
+	"DASHBOARD_USERNAME":"dashuser",
+	"DASHBOARD_PASSWORD":"dashpass",
 
-	"TIMEZONE":"",
+	"TIMEZONE":"America/New_York",
 
-	"CLOUD_REPO_TYPE":"",
-	"CLOUD_REPO_LINK":"",
-	"CLOUD_PATH":"",
-	"PRE_CLOUD_SCRIPT":""
+	"CLOUD_REPO_TYPE":"hg",
+	"CLOUD_REPO_LINK":"https://user@bitbucket.org/username/myrepo -b mybranch",
+	"CLOUD_PATH":"./cloud",
+	"PRE_CLOUD_SCRIPT":"./root-path/run_before_cloud.sh"
 }
