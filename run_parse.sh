@@ -235,10 +235,7 @@ echo "{
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
       \"PARSE_PUBLIC_SERVER_URL\": \"https://$DOMAIN/parse\",
       \"PARSE_SERVER_MOUNT_PATH\": \"/parse\",
-
-      \"PARSE_DASHBOARD_SSL_KEY\": \"/etc/letsencrypt/live/$DOMAIN/privkey.pem\",
-      \"PARSE_DASHBOARD_SSL_CERT\": \"/etc/letsencrypt/live/$DOMAIN/fullchain.pem\",
-      \"MOUNT_PATH\": \"/dashboard\"
+      \"VERBOSE\": \"1\"
     }
   }, {
     \"name\"        : \"parse-dashboard-wrapper\",
@@ -246,7 +243,18 @@ echo "{
     \"watch\"       : false,
     \"merge_logs\"  : true,
     \"cwd\"         : \"/home/parse\",
-    \"args\"         : \"--appId $APPLICATION_ID --masterKey $MASTER_KEY --serverURL https://$DOMAIN/parse --port 4040 --sslKey /etc/letsencrypt/live/$DOMAIN/privkey.pem --sslCert /etc/letsencrypt/live/$DOMAIN/fullchain.pem --appName $APP_NAME --mountPath /dashboard\"
+    \"env\": {
+      \"PARSE_DASHBOARD_SERVER_URL\": \"https://$DOMAIN/parse\",
+      \"PARSE_DASHBOARD_APP_ID\": \"$APPLICATION_ID\",
+      \"PARSE_DASHBOARD_APP_NAME\": \"$APP_NAME\",
+      \"PARSE_DASHBOARD_MASTER_KEY\": \"$MASTER_KEY\",
+      \"PARSE_DASHBOARD_SSL_KEY\": \"/etc/letsencrypt/live/$DOMAIN/privkey.pem\",
+      \"PARSE_DASHBOARD_SSL_CERT\": \"/etc/letsencrypt/live/$DOMAIN/fullchain.pem\",
+      \"PARSE_DASHBOARD_USER_ID\": \"$DASHBOARD_USERNAME\",
+      \"PARSE_DASHBOARD_USER_PASSWORD\": \"$DASHBOARD_PASSWORD\",
+      \"PORT\": \"4040\",
+      \"MOUNT_PATH\": \"/dashboard\"
+    }
   }]
 }" > /home/parse/ecosystem.json
 
