@@ -41,12 +41,19 @@ DASHBOARD_PASSWORD=$(jq -r '.DASHBOARD_PASSWORD' config.json) # Password to logi
 
 TIMEZONE=$(jq -r '.TIMEZONE' config.json) # Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
 
-# (Optional)
+# (Optional): Set up cloud code.
 CLOUD_REPO_TYPE=$(jq -r '.CLOUD_REPO_TYPE' config.json) # Set to either "hg" or "git".
 CLOUD_REPO_LINK=$(jq -r '.CLOUD_REPO_LINK' config.json) # Command/URL to run after git clone or hg clone.
 CLOUD_PATH=$(jq -r '.CLOUD_PATH' config.json) # Path of cloud folder within repository. If files are already on repo root level enter ".".
 PRE_CLOUD_SCRIPT=$(jq -r '.PRE_CLOUD_SCRIPT' config.json) # Path to a shell script, that may install any missing requirements before installing your cloud code.
 
+# (Optional): Set up email adapter.
+VERIFY_EMAIL=$(jq -r '.VERIFY_EMAIL' config.json) # Set to true to verify emails. Defaults to false.
+PREVENT_UNVERIFIED_EMAIL_LOGIN=$(jq -r '.PREVENT_UNVERIFIED_EMAIL_LOGIN' config.json) # Set to true to prevent login with unverified emails. Defaults to false.
+EMAIL_ADAPTER_MODULE=$(jq -r '.EMAIL_ADAPTER_MODULE' config.json) # Choose email adapter. Defaults to mailgun. Checkout more options here: https://github.com/ParsePlatform/parse-server#email-verification-and-password-reset
+EMAIL_FROM_ADDRESS=$(jq -r '.EMAIL_FROM_ADDRESS' config.json) # Address to send verification and reset emails from.
+EMAIL_DOMAIN=$(jq -r '.EMAIL_DOMAIN' config.json) # Domain on your email provider to use.
+EMAIL_API_KEY=$(jq -r '.EMAIL_API_KEY' config.json) # Api key provided by your email provider.
 
 # 1. Create User.
 useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
@@ -257,6 +264,27 @@ echo "{
     }
   }]
 }" > /home/parse/ecosystem.json
+
+# If email is setup add email adapter to ecosystem.json.
+if [ "$VERIFY_EMAIL" = true ] ; then
+  if [ "$EMAIL_FROM_ADDRESS" != "" ] && [ "$EMAIL_DOMAIN" != "" ] && [ "$EMAIL_API_KEY" != ""  ] ; then
+    sudo sed -i "/\"VERBOSE\": \"1\"/c\\
+      \"VERBOSE\": \"1\",\n\
+      \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
+      \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
+      \"PARSE_SERVER_EMAIL_ADAPTER\": {\n\
+          \"module\": \"$EMAIL_ADAPTER_MODULE\",\n\
+              \"options\": {\n\
+                \"fromAddress\": \"$EMAIL_FROM_ADDRESS\",\n\
+                \"domain\": \"$EMAIL_DOMAIN\",\n\
+                \"apiKey\": \"$EMAIL_API_KEY\"\n\
+          }\n\
+      },\n\
+      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true" /home/parse/ecosystem.json
+  else
+    echo "$(tput bold)$(tput setaf 1)Must set EMAIL_FROM_ADDRESS, EMAIL_DOMAIN and EMAIL_API_KEY in config.json in order to verify emails.$(tput sgr0)"
+  fi
+fi
 
 # Run the script with pm2.
 pm2 start /home/parse/ecosystem.json

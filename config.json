@@ -23,5 +23,12 @@
 	"CLOUD_REPO_TYPE":"hg",
 	"CLOUD_REPO_LINK":"https://user@bitbucket.org/username/myrepo -b mybranch",
 	"CLOUD_PATH":"./cloud",
-	"PRE_CLOUD_SCRIPT":"./root-path/run_before_cloud.sh"
+	"PRE_CLOUD_SCRIPT":"./root-path/run_before_cloud.sh",
+
+	"VERIFY_EMAIL": false,
+	"PREVENT_UNVERIFIED_EMAIL_LOGIN": false,
+	"EMAIL_ADAPTER_MODULE": "parse-server-simple-mailgun-adapter",
+	"EMAIL_FROM_ADDRESS": "no-reply@example.com",
+	"EMAIL_DOMAIN": "example.com",
+	"EMAIL_API_KEY": "key-myexamplekeyfrommailgun"
 }
