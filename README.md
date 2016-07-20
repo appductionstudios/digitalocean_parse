@@ -97,3 +97,38 @@ Path of cloud folder within repository. If files are already on repo root level 
 
 Path to a shell script you create within your cloud code repository, that installs any additional dependencies your cloud code needs to run.
 
+**VERIFY_EMAIL** (optional)
+
+When set to true send verification emails to new users. When set EMAIL_ADAPTER_MODULE, EMAIL_FROM_ADDRESS, EMAIL_DOMAIN and EMAIL_API_KEY need to be set.
+
+**PREVENT_UNVERIFIED_EMAIL_LOGIN** (optional)
+
+When set to true prevents users with unverified emails to login.
+
+**EMAIL_ADAPTER_MODULE** 
+
+The email adapter to use. Currently parse supports:
+
+[parse-server-simple-mailgun-adapter](https://github.com/ParsePlatform/parse-server-simple-mailgun-adapter) - default
+
+[parse-server-postmark-adapter](https://www.npmjs.com/package/parse-server-postmark-adapter)
+
+[parse-server-sendgrid-adapter](https://www.npmjs.com/package/parse-server-sendgrid-adapter)
+
+[parse-server-mandrill-adapter](https://www.npmjs.com/package/parse-server-mandrill-adapter)
+
+[parse-server-simple-ses-adapter](https://www.npmjs.com/package/parse-server-simple-ses-adapter)
+
+In case of using an adapter other than mailgun, make sure to npm install the respective models.
+
+**EMAIL_FROM_ADDRESS**
+
+The email address to use with email verification and password reset emails.
+
+**EMAIL_DOMAIN**
+
+The domain provided by your email provider.
+
+**EMAIL_API_KEY**
+
+The API key provided by your email provider.
