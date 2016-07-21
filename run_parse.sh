@@ -204,8 +204,6 @@ npm install -g parse-dashboard
 # Create Dedicated Parse User
 useradd --create-home --system parse -p $(perl -e "print crypt($PARSE_USER_PASSWORD,'sa');")
 
-mkdir -p /home/parse/cloud
-
 # Pull cloud code repo, if any.
 if [ "$CLOUD_REPO_LINK" != "" ] ; then
   if [ "$CLOUD_REPO_TYPE" = "hg" ] ; then
@@ -214,8 +212,7 @@ if [ "$CLOUD_REPO_LINK" != "" ] ; then
   else
       git clone $CLOUD_REPO_LINK /root/cloud_dir
   fi
-  cd /root/cloud_dir/$CLOUD_PATH
-  cp * /home/parse/cloud
+  ln -s /root/cloud_dir/$CLOUD_PATH /home/parse/cloud
 else
   echo "No cloud code repo supplied."
 fi
