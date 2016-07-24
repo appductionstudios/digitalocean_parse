@@ -208,17 +208,17 @@ useradd --create-home --system parse -p $(perl -e "print crypt($PARSE_USER_PASSW
 if [ "$CLOUD_REPO_LINK" != "" ] ; then
   if [ "$CLOUD_REPO_TYPE" = "hg" ] ; then
       sudo apt-get install -y mercurial
-      hg clone $CLOUD_REPO_LINK /root/cloud_dir
+      hg clone $CLOUD_REPO_LINK /home/parse/cloud_dir
   else
-      git clone $CLOUD_REPO_LINK /root/cloud_dir
+      git clone $CLOUD_REPO_LINK /home/parse/cloud_dir
   fi
-  ln -s /root/cloud_dir/$CLOUD_PATH /home/parse/cloud
+  ln -s /home/parse/cloud_dir/$CLOUD_PATH /home/parse/cloud
 else
   echo "No cloud code repo supplied."
 fi
 
 if [ "$PRE_CLOUD_SCRIPT" != "" ] ; then
-  sudo sh /root/cloud_dir/$PRE_CLOUD_SCRIPT
+  sudo sh /home/parse/cloud_dir/$PRE_CLOUD_SCRIPT
 fi
 
 # Install Parse Server and PM2

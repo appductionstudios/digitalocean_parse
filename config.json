@@ -28,7 +28,7 @@
 	"VERIFY_EMAIL": false,
 	"PREVENT_UNVERIFIED_EMAIL_LOGIN": false,
 	"EMAIL_ADAPTER_MODULE": "parse-server-simple-mailgun-adapter",
-	"EMAIL_FROM_ADDRESS": "no-reply@example.com",
+	"EMAIL_FROM_ADDRESS": "Example <no-reply@example.com>",
 	"EMAIL_DOMAIN": "example.com",
 	"EMAIL_API_KEY": "key-myexamplekeyfrommailgun"
 }
