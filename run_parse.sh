@@ -55,8 +55,17 @@ EMAIL_FROM_ADDRESS=$(jq -r '.EMAIL_FROM_ADDRESS' config.json) # Address to send 
 EMAIL_DOMAIN=$(jq -r '.EMAIL_DOMAIN' config.json) # Domain on your email provider to use.
 EMAIL_API_KEY=$(jq -r '.EMAIL_API_KEY' config.json) # Api key provided by your email provider.
 
+# (Required for parse-server-mailgun email adapter): Set up email templates.
+MAILGUN_PASSWORD_RESET_SUBJECT=$(jq -r '.MAILGUN_PASSWORD_RESET_SUBJECT' config.json) # Subject of password reset email.
+MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH=$(jq -r '.MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH' config.json) # Path to password reset txt template.
+MAILGUN_PASSWORD_RESET_HTML_PATH=$(jq -r '.MAILGUN_PASSWORD_RESET_HTML_PATH' config.json) # Path to password reset html template.
+
+MAILGUN_EMAIL_CONFIRMATION_SUBJECT=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_SUBJECT' config.json) # Subject of email confirmation email.
+MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH' config.json) # Path to email confirmation txt template.
+MAILGUN_EMAIL_CONFIRMATION_HTML_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_HTML_PATH' config.json) # Path to email confirmation txt template.
+
 # 1. Create User.
-useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
+useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD'sa');") -g sudo
 
 # Open configuration file as root. Change PermitRootLogin to no.
 sudo sed -i '/PermitRootLogin yes/c\PermitRootLogin no' /etc/ssh/sshd_config
@@ -265,7 +274,35 @@ echo "{
 # If email is setup add email adapter to ecosystem.json.
 if [ "$VERIFY_EMAIL" = true ] ; then
   if [ "$EMAIL_FROM_ADDRESS" != "" ] && [ "$EMAIL_DOMAIN" != "" ] && [ "$EMAIL_API_KEY" != ""  ] ; then
-    sudo sed -i "/\"VERBOSE\": \"1\"/c\\
+    # If the parse-server-mailgun email adapter is chosen add required email templates.
+    if [ "$EMAIL_ADAPTER_MODULE" = "parse-server-mailgun"] ; then
+      sudo sed -i "/\"VERBOSE\": \"1\"/c\\
+      \"VERBOSE\": \"1\",\n\
+      \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
+      \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
+      \"PARSE_SERVER_EMAIL_ADAPTER\": {\n\
+          \"module\": \"$EMAIL_ADAPTER_MODULE\",\n\
+          \"options\": {\n\
+            \"fromAddress\": \"$EMAIL_FROM_ADDRESS\",\n\
+            \"domain\": \"$EMAIL_DOMAIN\",\n\
+            \"apiKey\": \"$EMAIL_API_KEY\"\n\,
+            \"templates\": {
+              \"passwordResetEmail\": {
+                \"subject\": \"$MAILGUN_PASSWORD_RESET_SUBJECT\",
+                \"pathPlainText\": \"$MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH\",
+                \"pathHtml\": \"$MAILGUN_PASSWORD_RESET_HTML_PATH\"
+              },
+              \"verificationEmail\": {
+                \"subject\": \"$MAILGUN_EMAIL_CONFIRMATION_SUBJECT\",
+                \"pathPlainText\": \"MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH\",
+                \"pathHtml\": \"MAILGUN_EMAIL_CONFIRMATION_HTML_PATH\"
+              }
+            }\n\
+          }\n\
+      },\n\
+      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true" /home/parse/ecosystem.json
+    else
+      sudo sed -i "/\"VERBOSE\": \"1\"/c\\
       \"VERBOSE\": \"1\",\n\
       \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
       \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
@@ -278,6 +315,7 @@ if [ "$VERIFY_EMAIL" = true ] ; then
           }\n\
       },\n\
       \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true" /home/parse/ecosystem.json
+    fi
   else
     echo "$(tput bold)$(tput setaf 1)Must set EMAIL_FROM_ADDRESS, EMAIL_DOMAIN and EMAIL_API_KEY in config.json in order to verify emails.$(tput sgr0)"
   fi

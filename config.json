@@ -30,5 +30,13 @@
 	"EMAIL_ADAPTER_MODULE": "parse-server-simple-mailgun-adapter",
 	"EMAIL_FROM_ADDRESS": "Example <no-reply@example.com>",
 	"EMAIL_DOMAIN": "example.com",
-	"EMAIL_API_KEY": "key-myexamplekeyfrommailgun"
+	"EMAIL_API_KEY": "key-myexamplekeyfrommailgun",
+
+	"MAILGUN_PASSWORD_RESET_SUBJECT": "Reset your password",
+	"MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH": "/usr/lib/node_modules/parse-server/public_html/password_reset_email.txt",
+	"MAILGUN_PASSWORD_RESET_HTML_PATH": "/usr/lib/node_modules/parse-server/public_html/password_reset_email.html",
+
+	"MAILGUN_EMAIL_CONFIRMATION_SUBJECT": "Confirm your account",
+	"MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH": "/usr/lib/node_modules/parse-server/public_html/verification_email.txt",
+	"MAILGUN_EMAIL_CONFIRMATION_HTML_PATH": "/usr/lib/node_modules/parse-server/public_html/verification_email.html"
 }
