@@ -5,13 +5,7 @@ if ! [ $(id -u) = 0 ]; then
    exit 1
 fi
 
-# Add Mongo before updating to avoid updating multiple times.
-
-# Import public key.
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-
-# Create a List File.
-echo "deb http://repo.mongodb.org/apt/ubuntu "$(lsb_release -sc)"/mongodb-org/3.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.0.list
+SCRIPT_DIR="$(dirname `readlink -f "$0"`)"
 
 # Run update before attempting to install packages.
 sudo apt-get update
@@ -21,7 +15,6 @@ sudo apt-get install -y jq
 
 # Set variables:
 DOMAIN=$(jq -r '.DOMAIN' config.json) # Domain to use for api and database.
-PARSE_DB_PASS=$(jq -r '.PARSE_DB_PASS' config.json) # Password for parse user.
 SWAPSIZE=$(jq -r '.SWAPSIZE' config.json) # Swapsize for Ubuntu machine.
 USERNAME=$(jq -r '.USERNAME' config.json) # Name of user to ssh to your Ubuntu machine with.
 PASSWORD=$(jq -r '.PASSWORD' config.json) # Password of user to ssh to your Ubuntu machine with.
@@ -29,8 +22,8 @@ PARSE_USER_PASSWORD=$(jq -r '.PARSE_USER_PASSWORD' config.json) # Password of de
 EMAIL_ADDRESS=$(jq -r '.EMAIL_ADDRESS' config.json) # Email address to use with letsencrypt.
 
 DATABASE_NAME=$(jq -r '.DATABASE_NAME' config.json) # Mongo DB name.
-MONGO_USER=$(jq -r '.MONGO_USER' config.json) # Mongo DB admin user name.
-MONGO_PASS=$(jq -r '.MONGO_PASS' config.json) # Mongo DB admin user pass.
+PARSE_DB_PASS=$(jq -r '.PARSE_DB_PASS' config.json) # Password for parse user.
+EXTERNAL_MONGODB_URI=$(jq -r '.EXTERNAL_MONGODB_URI' config.json) # External MongoDB Uri.
 
 APP_NAME=$(jq -r '.APP_NAME' config.json) # App name on parse-dashboard
 APPLICATION_ID=$(jq -r '.APPLICATION_ID' config.json) # Application ID for Parse app to migrate.
@@ -64,8 +57,8 @@ MAILGUN_EMAIL_CONFIRMATION_SUBJECT=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_SUBJECT'
 MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH' config.json) # Path to email confirmation txt template.
 MAILGUN_EMAIL_CONFIRMATION_HTML_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_HTML_PATH' config.json) # Path to email confirmation txt template.
 
-# 1. Create User.
-useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD'sa');") -g sudo
+# Create User.
+useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
 
 # Open configuration file as root. Change PermitRootLogin to no.
 sudo sed -i '/PermitRootLogin yes/c\PermitRootLogin no' /etc/ssh/sshd_config
@@ -73,7 +66,7 @@ sudo sed -i '/PermitRootLogin yes/c\PermitRootLogin no' /etc/ssh/sshd_config
 # Reload ssh service.
 service ssh restart
 
-# 2. Server Config.
+# Server Config.
 # Setup firewall.
 sudo ufw allow ssh
 sudo ufw --force enable
@@ -93,18 +86,6 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 sudo sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 
-# 3. Install MongoDB.
-
-# Install kerberose lib.
-sudo apt-get install -y libkrb5-dev
-
-# Install and Verify MongoDB.
-sudo apt-get install -y mongodb-org
-
-# Check everything is working.
-service mongod status
-
-# 4. Parse Server.
 # Change dir to root folder.
 cd ~
 
@@ -115,16 +96,21 @@ sudo apt-get install -y nodejs build-essential git
 # Install Let's Encrypt and Dependencies.
 sudo apt-get -y install git bc
 sudo git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
-cd /opt/letsencrypt
 
 # Retrieve Initial Certificate
-sudo ./letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos
-# Configure MongoDB for Migration.
-sudo cat /etc/letsencrypt/archive/$DOMAIN/fullchain1.pem | sudo tee -a /etc/ssl/mongo.pem
-sudo cat /etc/letsencrypt/archive/$DOMAIN/privkey1.pem | sudo tee -a /etc/ssl/mongo.pem
+sudo /opt/letsencrypt/letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos
 
-sudo chown mongodb:mongodb /etc/ssl/mongo.pem
-sudo chmod 600 /etc/ssl/mongo.pem
+cd $SCRIPT_DIR
+
+# Setup MongoDB.
+if [ "$EXTERNAL_MONGODB_URI" = "" ] ; then
+  sh "$SCRIPT_DIR/_install_mongo.sh"
+  MONGODB_URI="mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true"
+else
+  MONGODB_URI="$EXTERNAL_MONGODB_URI"
+fi
+
+cd ~
 
 # Install Cron.
 sudo apt-get -y install cron
@@ -133,28 +119,6 @@ sudo apt-get -y install cron
 echo "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
 sudo crontab tempcron
 rm tempcron
-
-# Create Mongo Admin user.
-echo "use admin
-db.createUser({user: \"$MONGO_USER\",pwd: \"$MONGO_PASS\", roles: [{role: \"userAdminAnyDatabase\", db: \"admin\"}]})
-exit" > mongo_admin.js
-mongo --port 27017 < mongo_admin.js
-rm mongo_admin.js
-
-# Configure MongoDB for migration.
-echo "use $DATABASE_NAME
-db.createUser({user: \"parse\",pwd: \"$PARSE_DB_PASS\", roles: [\"readWrite\", \"dbAdmin\"]})
-exit" > mongo_parse.js
-mongo --port 27017 < mongo_parse.js
-rm mongo_parse.js
-
-# Update mongod.conf file.
-sudo sed -i "/bindIp: 127.0.0.1/c\  bindIp: 0.0.0.0\n  ssl:\n    mode: requireSSL\n    PEMKeyFile: /etc/ssl/mongo.pem" /etc/mongod.conf
-sudo sed -i '/#security/c\security:\n  authorization: enabled' /etc/mongod.conf
-echo "setParameter:\n  failIndexKeyTooLong: false" >> /etc/mongod.conf
-
-# Restart MongoDB.
-sudo service mongod restart
 
 # Install and configure Nginx
 sudo apt-get install -y nginx
@@ -243,7 +207,7 @@ echo "{
     \"cwd\"         : \"/home/parse\",
     \"env\": {
       \"PARSE_SERVER_CLOUD_CODE_MAIN\": \"/home/parse/cloud/main.js\",
-      \"PARSE_SERVER_DATABASE_URI\": \"mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true\",
+      \"PARSE_SERVER_DATABASE_URI\": \"$MONGODB_URI\",
       \"PARSE_SERVER_APPLICATION_ID\": \"$APPLICATION_ID\",
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
       \"PARSE_PUBLIC_SERVER_URL\": \"https://$DOMAIN/parse\",
@@ -275,7 +239,7 @@ echo "{
 if [ "$VERIFY_EMAIL" = true ] ; then
   if [ "$EMAIL_FROM_ADDRESS" != "" ] && [ "$EMAIL_DOMAIN" != "" ] && [ "$EMAIL_API_KEY" != ""  ] ; then
     # If the parse-server-mailgun email adapter is chosen add required email templates.
-    if [ "$EMAIL_ADAPTER_MODULE" = "parse-server-mailgun"] ; then
+    if [ "$EMAIL_ADAPTER_MODULE" = "parse-server-mailgun" ] ; then
       sudo sed -i "/\"VERBOSE\": \"1\"/c\\
       \"VERBOSE\": \"1\",\n\
       \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
@@ -285,18 +249,18 @@ if [ "$VERIFY_EMAIL" = true ] ; then
           \"options\": {\n\
             \"fromAddress\": \"$EMAIL_FROM_ADDRESS\",\n\
             \"domain\": \"$EMAIL_DOMAIN\",\n\
-            \"apiKey\": \"$EMAIL_API_KEY\"\n\,
-            \"templates\": {
-              \"passwordResetEmail\": {
-                \"subject\": \"$MAILGUN_PASSWORD_RESET_SUBJECT\",
-                \"pathPlainText\": \"$MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH\",
-                \"pathHtml\": \"$MAILGUN_PASSWORD_RESET_HTML_PATH\"
-              },
-              \"verificationEmail\": {
-                \"subject\": \"$MAILGUN_EMAIL_CONFIRMATION_SUBJECT\",
-                \"pathPlainText\": \"MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH\",
-                \"pathHtml\": \"MAILGUN_EMAIL_CONFIRMATION_HTML_PATH\"
-              }
+            \"apiKey\": \"$EMAIL_API_KEY\",\n\
+            \"templates\": {\n\
+              \"passwordResetEmail\": {\n\
+                \"subject\": \"$MAILGUN_PASSWORD_RESET_SUBJECT\",\n\
+                \"pathPlainText\": \"$MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH\",\n\
+                \"pathHtml\": \"$MAILGUN_PASSWORD_RESET_HTML_PATH\"\n\
+              },\n\
+              \"verificationEmail\": {\n\
+                \"subject\": \"$MAILGUN_EMAIL_CONFIRMATION_SUBJECT\",\n\
+                \"pathPlainText\": \"$MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH\",\n\
+                \"pathHtml\": \"$MAILGUN_EMAIL_CONFIRMATION_HTML_PATH\"\n\
+              }\n\
             }\n\
           }\n\
       },\n\
@@ -331,5 +295,4 @@ pm2 save
 sudo pm2 startup ubuntu -u root --hp /root/
 
 # Ouptut migration string:
-echo "Use the following string for migration: $(tput bold)mongodb://parse:$PARSE_DB_PASS@$DOMAIN:27017/$DATABASE_NAME?ssl=true$(tput sgr0)"
-
+echo "Use the following string for migration: $(tput bold)$MONGODB_URI$(tput sgr0)"

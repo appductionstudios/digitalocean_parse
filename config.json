@@ -10,6 +10,7 @@
 	"DATABASE_NAME":"mydatabase",
 	"MONGO_USER":"admin",
 	"MONGO_PASS":"admin",
+	"EXTERNAL_MONGODB_URI": "",
 
 	"APP_NAME":"myApp",
 	"APPLICATION_ID":"myAppId",
