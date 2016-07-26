@@ -111,6 +111,8 @@ The email adapter to use. Currently parse supports:
 
 [parse-server-simple-mailgun-adapter](https://github.com/ParsePlatform/parse-server-simple-mailgun-adapter) - default
 
+[parse-server-mailgun](https://github.com/sebsylvester/parse-server-mailgun)
+
 [parse-server-postmark-adapter](https://www.npmjs.com/package/parse-server-postmark-adapter)
 
 [parse-server-sendgrid-adapter](https://www.npmjs.com/package/parse-server-sendgrid-adapter)
@@ -132,3 +134,31 @@ The domain provided by your email provider.
 **EMAIL_API_KEY**
 
 The API key provided by your email provider.
+
+## Mailgun Params ##
+
+These params only work when *parse-server-mailgun* is chosen as the email adapter.
+
+**MAILGUN_PASSWORD_RESET_SUBJECT**
+
+Subject of password reset email.
+
+**MAILGUN_PASSWORD_RESET_PLAIN_TXT_PATH**
+
+Path to password reset txt template.
+
+**MAILGUN_PASSWORD_RESET_HTML_PATH**
+
+Path to password reset html template.
+
+**MAILGUN_EMAIL_CONFIRMATION_SUBJECT**
+
+Subject of email confirmation email.
+
+**MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH**
+
+Path to email confirmation txt template.
+
+**MAILGUN_EMAIL_CONFIRMATION_HTML_PATH**
+
+Path to email confirmation txt template.
