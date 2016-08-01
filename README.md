@@ -137,7 +137,7 @@ The API key provided by your email provider.
 
 ## Mailgun Params ##
 
-These params only work when *parse-server-mailgun* is chosen as the email adapter.
+The *MAILGUN_* params only work when *parse-server-mailgun* is chosen as the email adapter.
 
 **MAILGUN_PASSWORD_RESET_SUBJECT**
 
@@ -162,3 +162,25 @@ Path to email confirmation txt template.
 **MAILGUN_EMAIL_CONFIRMATION_HTML_PATH**
 
 Path to email confirmation txt template.
+
+**FILE_ADAPTER_MODULE**
+
+The file adapter module to use. Currently only parse-server-s3-adapter is supported. Leave empty to use MongoDB's GridFS.
+
+The *S3_* params only work when *parse-server-S3_adapter* is chosen as the file adapter.
+
+**S3_ACCESS_KEY**
+
+Access Key to your S3 Bucket.
+
+**S3_SECRET_KEY**
+
+Secret Key to your S3 Bucket.
+
+**S3_BUCKET_NAME**
+
+**Name of your S3 Bucket.**
+
+**S3_REGION**
+
+The region of your S3 Bucket. Defaults to us-east-1.
