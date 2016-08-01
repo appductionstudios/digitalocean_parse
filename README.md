@@ -179,7 +179,7 @@ Secret Key to your S3 Bucket.
 
 **S3_BUCKET_NAME**
 
-**Name of your S3 Bucket.**
+Name of your S3 Bucket.
 
 **S3_REGION**
 
