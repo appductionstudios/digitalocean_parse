@@ -1,6 +1,6 @@
 # Execute while logged in as root.
 
-if ! [ $(id -u) = 0 ]; then
+if ! [ $(id -u) -eq 0 ]; then
    echo "$(tput bold)$(tput setaf 1)Script must be executed as root.$(tput sgr0)"
    exit 1
 fi
@@ -56,6 +56,14 @@ MAILGUN_PASSWORD_RESET_HTML_PATH=$(jq -r '.MAILGUN_PASSWORD_RESET_HTML_PATH' con
 MAILGUN_EMAIL_CONFIRMATION_SUBJECT=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_SUBJECT' config.json) # Subject of email confirmation email.
 MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH' config.json) # Path to email confirmation txt template.
 MAILGUN_EMAIL_CONFIRMATION_HTML_PATH=$(jq -r '.MAILGUN_EMAIL_CONFIRMATION_HTML_PATH' config.json) # Path to email confirmation txt template.
+
+FILE_ADAPTER_MODULE=$(jq -r '.FILE_ADAPTER_MODULE' config.json) # The file adapter module to use. Currently only parse-server-s3-adapter is supported. Leave empty to use MongoDB's GridFS.
+
+# (Required for parse-server-s3-adapter files adapter): Set up s3 bucket.
+S3_ACCESS_KEY=$(jq -r '.S3_ACCESS_KEY' config.json) # Access Key to your S3 Bucket.
+S3_SECRET_KEY=$(jq -r '.S3_SECRET_KEY' config.json) # Secret Key to your S3 Bucket.
+S3_BUCKET_NAME=$(jq -r '.S3_BUCKET_NAME' config.json) # Name of your S3 Bucket.
+S3_REGION=$(jq -r '.S3_REGION' config.json) # The region of your S3 Bucket.
 
 # Create User.
 useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
@@ -241,7 +249,6 @@ if [ "$VERIFY_EMAIL" = true ] ; then
     # If the parse-server-mailgun email adapter is chosen add required email templates.
     if [ "$EMAIL_ADAPTER_MODULE" = "parse-server-mailgun" ] ; then
       sudo sed -i "/\"VERBOSE\": \"1\"/c\\
-      \"VERBOSE\": \"1\",\n\
       \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
       \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
       \"PARSE_SERVER_EMAIL_ADAPTER\": {\n\
@@ -264,10 +271,10 @@ if [ "$VERIFY_EMAIL" = true ] ; then
             }\n\
           }\n\
       },\n\
-      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true" /home/parse/ecosystem.json
+      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true,\n\
+      \"VERBOSE\": \"1\"" /home/parse/ecosystem.json
     else
       sudo sed -i "/\"VERBOSE\": \"1\"/c\\
-      \"VERBOSE\": \"1\",\n\
       \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
       \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
       \"PARSE_SERVER_EMAIL_ADAPTER\": {\n\
@@ -278,10 +285,32 @@ if [ "$VERIFY_EMAIL" = true ] ; then
                 \"apiKey\": \"$EMAIL_API_KEY\"\n\
           }\n\
       },\n\
-      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true" /home/parse/ecosystem.json
+      \"PARSE_SERVER_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL\": true,\n\
+      \"VERBOSE\": \"1\"" /home/parse/ecosystem.json
     fi
   else
     echo "$(tput bold)$(tput setaf 1)Must set EMAIL_FROM_ADDRESS, EMAIL_DOMAIN and EMAIL_API_KEY in config.json in order to verify emails.$(tput sgr0)"
+  fi
+fi
+
+# If file adapter module is set to S3.
+if [ "$FILE_ADAPTER_MODULE" = "parse-server-s3-adapter" ] ; then
+  if [ "$S3_ACCESS_KEY" != "" ] && [ "$S3_SECRET_KEY" != "" ] && [ "$S3_BUCKET_NAME" != ""  ] && [ "$S3_REGION" != ""  ] ; then
+    npm install -g parse-server-s3-adapter
+
+    sudo sed -i "/\"VERBOSE\": \"1\"/c\\
+      \"PARSE_SERVER_FILES_ADAPTER\" : {\n\
+      \"module\": \"$FILE_ADAPTER_MODULE\",\n\
+        \"options\": {\n\
+          \"accessKey\": \"$S3_ACCESS_KEY\",\n\
+          \"secretKey\": \"$S3_SECRET_KEY\",\n\
+          \"bucket\": \"$S3_BUCKET_NAME\",\n\
+          \"region\": \"$S3_REGION\"\n\
+        }\n\
+      },\n\
+      \"VERBOSE\": \"1\"" /home/parse/ecosystem.json
+  else
+    echo "$(tput bold)$(tput setaf 1)Must set S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET_NAME and S3_REGION in config.json in order to use S3 as your file adapter.$(tput sgr0)"
   fi
 fi
 

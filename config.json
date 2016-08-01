@@ -39,5 +39,11 @@
 
 	"MAILGUN_EMAIL_CONFIRMATION_SUBJECT": "Confirm your account",
 	"MAILGUN_EMAIL_CONFIRMATION_PLAIN_TXT_PATH": "/usr/lib/node_modules/parse-server/public_html/verification_email.txt",
-	"MAILGUN_EMAIL_CONFIRMATION_HTML_PATH": "/usr/lib/node_modules/parse-server/public_html/verification_email.html"
+	"MAILGUN_EMAIL_CONFIRMATION_HTML_PATH": "/usr/lib/node_modules/parse-server/public_html/verification_email.html",
+
+	"FILE_ADAPTER_MODULE": "parse-server-s3-adapter",
+	"S3_ACCESS_KEY": "myaccesskey",
+	"S3_SECRET_KEY": "mysecretkey",
+	"S3_BUCKET_NAME": "mybucketname",
+	"S3_REGION": "us-east-1"
 }
