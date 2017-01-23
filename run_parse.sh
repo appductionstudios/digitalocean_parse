@@ -34,6 +34,9 @@ DASHBOARD_PASSWORD=$(jq -r '.DASHBOARD_PASSWORD' config.json) # Password to logi
 
 TIMEZONE=$(jq -r '.TIMEZONE' config.json) # Timezone to use. Enter it as <continent>/<city>. For example: America/New_York
 
+ADD_JOBS=$(jq -r '.ADD_JOBS' config.json) # Whether to add agenda jobs or not.
+AGENDA_PATH=$(jq -r '.AGENDA_PATH' config.json) # The path to read the agenda jobs from. Defaults to /home/parse/jobs.js.
+
 # (Optional): Set up cloud code.
 CLOUD_REPO_TYPE=$(jq -r '.CLOUD_REPO_TYPE' config.json) # Set to either "hg" or "git".
 CLOUD_REPO_LINK=$(jq -r '.CLOUD_REPO_LINK' config.json) # Command/URL to run after git clone or hg clone.
@@ -205,7 +208,6 @@ fi
 # Install Parse Server and PM2
 sudo npm install -g parse-server pm2
 
-# @TODO figure out why it fails with watch=true.
 echo "{
   \"apps\" : [{
     \"name\"        : \"parse-server-wrapper\",
@@ -312,6 +314,11 @@ if [ "$FILE_ADAPTER_MODULE" = "parse-server-s3-adapter" ] ; then
   else
     echo "$(tput bold)$(tput setaf 1)Must set S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET_NAME and S3_REGION in config.json in order to use S3 as your file adapter.$(tput sgr0)"
   fi
+fi
+
+# Add agenda jobs if needed.
+if [ "$ADD_JOBS" = true ] ; then
+  sh "$SCRIPT_DIR/_add_jobs.sh"
 fi
 
 # Run the script with pm2.

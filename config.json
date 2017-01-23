@@ -21,6 +21,9 @@
 
 	"TIMEZONE":"America/New_York",
 
+	"ADD_JOBS": true,
+	"AGENDA_PATH": "/home/parse/jobs.js",
+
 	"CLOUD_REPO_TYPE":"hg",
 	"CLOUD_REPO_LINK":"https://user@bitbucket.org/username/myrepo -b mybranch",
 	"CLOUD_PATH":"./cloud",
