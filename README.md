@@ -10,9 +10,7 @@
 
 5. Copy the generated **mongodb://** url and use it for your migration on Parse.com.
 
-6. For background jobs run `sh add_jobs.sh`. Then copy your background jobs to /root/parse-server-example/jobs.js file. And run `pm2 restart parse-server-wrapper`. Make sure to copy each job separately to ensure following the agenda syntax.
-
-7. To sync the cloud code with your repo run `sh parse_deploy.sh`. Make sure you have the cloud params set in your config.json before running this.
+6. To sync the cloud code with your repo run `sh parse_deploy.sh`. Make sure you have the cloud params set in your config.json before running this.
 
 Note: This script is based on these tutorials:
 
@@ -22,7 +20,7 @@ Note: This script is based on these tutorials:
 
 ## Backgrounds jobs.
 
-The script uses [Agenda](https://github.com/rschmukler/agenda) for backgrounds jobs. After running the script open **/root/parse-server-example/jobs.js** and add your jobs. Refer to the example task under the created jobs.js file and Agenda's [github](https://github.com/rschmukler/agenda) for more information on how to use and configure background jobs.
+The script uses [Agenda](https://github.com/rschmukler/agenda) for backgrounds jobs. Setup using the ADD_JOBS and AGENDA_PATH variables. For more information on how to use Agenda check out their [github](https://github.com/rschmukler/agenda)
 
 ## Variable description.
 
@@ -76,6 +74,16 @@ Application ID and Master Key to use on your parse-dashboard as well as parse-se
 **DASHBOARD_USERNAME and DASHBOARD_PASSWORD**
 
 Credentials of your dashboard user.
+
+###**ADD_JOBS**
+
+Set to "true" to install jobs using [Agenda](https://github.com/rschmukler/agenda).
+
+###**AGENDA_PATH**
+
+The path to read the agenda jobs from.
+
+Set to an empty string to generate a job.js file for Agenda. The file contains the basics for running Agenda as well as a sample job. The Agenda syntax differs from Parse's background jobs, therefore it is recommended to leave the AGENDA_PATH as an empty string in case you are unfamiliar with Agenda.
 
 **TIMEZONE**
 
