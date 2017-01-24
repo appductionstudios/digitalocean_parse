@@ -318,6 +318,7 @@ fi
 
 # Add agenda jobs if needed.
 if [ "$ADD_JOBS" = true ] ; then
+  cd $SCRIPT_DIR
   sh "$SCRIPT_DIR/_add_jobs.sh"
 fi
 

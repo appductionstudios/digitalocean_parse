@@ -13,9 +13,9 @@ else
   MONGODB_URI="$EXTERNAL_MONGODB_URI"
 fi
 
+# Prepare for background jobs using agenda.
 cd /home/parse
 
-# Prepare for background jobs using agenda.
 # Install agenda.
 npm install agenda
 
@@ -59,25 +59,17 @@ if [ "$AGENDA_PATH" = "" ] ; then
 fi
 
 # # Start agenda jobs with pm2.
-sed -i '/}]/c\\
+sed -i "/}]/c\\
   },\n\
   {\n\
-    "name"        : "parse-jobs-wrapper",\n\
-    "script"      : "$AGENDA_PATH",\n\
-    "watch"       : false,\n\
-    "merge_logs"  : true,\n\
-    "cwd"         : "/home/parse",\n\
-    "env": {\n\
-      "AGENDA_JOBS_APPLICATION_ID": "$APPLICATION_ID"\n\,
-      "AGENDA_JOBS_MASTER_KEY": "$MASTER_KEY"\n\,
-      "AGENDA_JOBS_DATABASE_URI": "$MONGODB_URI"\n\,
+    \"name\"        : \"parse-jobs-wrapper\",\n\
+    \"script\"      : \"$AGENDA_PATH\",\n\
+    \"watch\"       : false,\n\
+    \"merge_logs\"  : true,\n\
+    \"cwd\"         : \"/home/parse\",\n\
+    \"env\": {\n\
+      \"AGENDA_JOBS_APPLICATION_ID\": \"$APPLICATION_ID\",\n\
+      \"AGENDA_JOBS_MASTER_KEY\": \"$MASTER_KEY\",\n\
+      \"AGENDA_JOBS_DATABASE_URI\": \"$MONGODB_URI\",\n\
     }\n\
-  }]' /home/parse/ecosystem.json
-
-pm2 restart /home/parse/ecosystem.json
-
-# Save pm2 process.
-pm2 save
-
-# Run initialization scripts as parse user.
-sudo pm2 startup ubuntu -u root --hp /root/
+  }]" /home/parse/ecosystem.json
