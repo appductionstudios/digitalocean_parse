@@ -202,6 +202,7 @@ else
 fi
 
 if [ "$PRE_CLOUD_SCRIPT" != "" ] ; then
+  cd $SCRIPT_DIR
   sudo sh /home/parse/cloud_dir/$PRE_CLOUD_SCRIPT
 fi
 
