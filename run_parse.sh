@@ -127,7 +127,7 @@ cd ~
 sudo apt-get -y install cron
 
 # Set Cron Job for auto renewal every Monday at 2:30. Restart Nginx every Monday at 2:35.
-echo "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 /etc/init.d/nginx reload" > tempcron
+echo "30 2 * * 1 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n35 2 * * 1 service nginx restart" > tempcron
 sudo crontab tempcron
 rm tempcron
 
@@ -322,6 +322,9 @@ if [ "$ADD_JOBS" = true ] ; then
   sh "$SCRIPT_DIR/_add_jobs.sh"
 fi
 
+# Change owner of /home/parse to parse user.
+chown -R parse /home/parse
+
 # Run the script with pm2.
 pm2 start /home/parse/ecosystem.json
 
@@ -329,7 +332,7 @@ pm2 start /home/parse/ecosystem.json
 pm2 save
 
 # Run initialization scripts as parse user.
-sudo pm2 startup ubuntu -u root --hp /root/
+sudo pm2 startup ubuntu14 -u root --hp /root/
 
 # Ouptut migration string:
 echo "Use the following string for migration: $(tput bold)$MONGODB_URI$(tput sgr0)"
