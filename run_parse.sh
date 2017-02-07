@@ -42,6 +42,7 @@ CLOUD_REPO_TYPE=$(jq -r '.CLOUD_REPO_TYPE' config.json) # Set to either "hg" or 
 CLOUD_REPO_LINK=$(jq -r '.CLOUD_REPO_LINK' config.json) # Command/URL to run after git clone or hg clone.
 CLOUD_PATH=$(jq -r '.CLOUD_PATH' config.json) # Path of cloud folder within repository. If files are already on repo root level enter ".".
 PRE_CLOUD_SCRIPT=$(jq -r '.PRE_CLOUD_SCRIPT' config.json) # Path to a shell script, that may install any missing requirements before installing your cloud code.
+POST_INSTALL_SCRIPT=$(jq -r '.POST_INSTALL_SCRIPT' config.json) # Path to a shell script, that may install any missing requirements before installing your cloud code.
 
 # (Optional): Set up email adapter.
 VERIFY_EMAIL=$(jq -r '.VERIFY_EMAIL' config.json) # Set to true to verify emails. Defaults to false.
@@ -337,3 +338,8 @@ sudo pm2 startup ubuntu14 -u root --hp /root/
 
 # Ouptut migration string:
 echo "Use the following string for migration: $(tput bold)$MONGODB_URI$(tput sgr0)"
+
+if [ "$POST_INSTALL_SCRIPT" != "" ] ; then
+  cd $SCRIPT_DIR
+  sudo sh /home/parse/cloud_dir/$POST_INSTALL_SCRIPT
+fi

@@ -28,7 +28,6 @@
 	"CLOUD_REPO_LINK":"https://user@bitbucket.org/username/myrepo -b mybranch",
 	"CLOUD_PATH":"./cloud",
 	"PRE_CLOUD_SCRIPT":"./root-path/run_before_cloud.sh",
-	"IS_DEV": true,
 
 	"VERIFY_EMAIL": false,
 	"PREVENT_UNVERIFIED_EMAIL_LOGIN": false,
