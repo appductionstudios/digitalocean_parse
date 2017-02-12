@@ -45,6 +45,9 @@ sudo sed -i "/bindIp: 127.0.0.1/c\  bindIp: 0.0.0.0\n  ssl:\n    mode: requireSS
 sudo sed -i '/#security/c\security:\n  authorization: enabled' /etc/mongod.conf
 echo "setParameter:\n  failIndexKeyTooLong: false" >> /etc/mongod.conf
 
+# Potential fix for that "Unknown instance" bug.
+#chown -R mongodb:mongodb /var/lib/mongodb/
+
 # Restart MongoDB.
 sudo service mongod restart
 
