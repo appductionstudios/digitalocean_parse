@@ -110,7 +110,7 @@ sudo apt-get -y install git bc
 sudo git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
 
 # Retrieve Initial Certificate
-sudo /opt/letsencrypt/letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos
+sudo /opt/letsencrypt/letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos --no-eff-email
 
 cd $SCRIPT_DIR
 
