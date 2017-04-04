@@ -74,6 +74,7 @@ useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa
 
 # Open configuration file as root. Change PermitRootLogin to no.
 sudo sed -i '/PermitRootLogin yes/c\PermitRootLogin no' /etc/ssh/sshd_config
+sudo sed -i '/#PasswordAuthentication yes/c\PasswordAuthentication yes' /etc/ssh/sshd_config
 
 # Reload ssh service.
 service ssh restart
