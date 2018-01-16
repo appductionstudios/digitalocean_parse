@@ -103,7 +103,7 @@ sudo sh -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 cd ~
 
 # Install latest Node.js.
-curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
 sudo apt-get install -y nodejs build-essential git
 
 # Install Let's Encrypt and Dependencies.
@@ -157,6 +157,7 @@ server {
         ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
         ssl_prefer_server_ciphers on;
         ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+        client_max_body_size 100M;
         # Pass requests for /parse/ to Parse Server instance at localhost:1337
         location /parse/ {
                 proxy_set_header X-Real-IP \$remote_addr;
@@ -225,6 +226,9 @@ echo "{
       \"PARSE_SERVER_MASTER_KEY\": \"$MASTER_KEY\",
       \"PARSE_PUBLIC_SERVER_URL\": \"https://$DOMAIN/parse\",
       \"PARSE_SERVER_MOUNT_PATH\": \"/parse\",
+      \"PARSE_SERVER_DATABASE_OPTIONS\" : {
+        \"poolSize\": 25
+      },
       \"VERBOSE\": \"1\"
     }
   }, {
@@ -253,6 +257,8 @@ if [ "$VERIFY_EMAIL" = true ] ; then
   if [ "$EMAIL_FROM_ADDRESS" != "" ] && [ "$EMAIL_DOMAIN" != "" ] && [ "$EMAIL_API_KEY" != ""  ] ; then
     # If the parse-server-mailgun email adapter is chosen add required email templates.
     if [ "$EMAIL_ADAPTER_MODULE" = "parse-server-mailgun" ] ; then
+      npm install -g parse-server-mailgun
+
       sudo sed -i "/\"VERBOSE\": \"1\"/c\\
       \"PARSE_SERVER_APP_NAME\": \"$APP_NAME\",\n\
       \"PARSE_SERVER_VERIFY_USER_EMAILS\": true,\n\
@@ -335,7 +341,7 @@ pm2 start /home/parse/ecosystem.json
 pm2 save
 
 # Run initialization scripts as parse user.
-sudo pm2 startup ubuntu14 -u root --hp /root/
+pm2 startup systemd
 
 # Ouptut migration string:
 echo "Use the following string for migration: $(tput bold)$MONGODB_URI$(tput sgr0)"
