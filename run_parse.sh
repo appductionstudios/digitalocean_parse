@@ -69,6 +69,9 @@ S3_SECRET_KEY=$(jq -r '.S3_SECRET_KEY' config.json) # Secret Key to your S3 Buck
 S3_BUCKET_NAME=$(jq -r '.S3_BUCKET_NAME' config.json) # Name of your S3 Bucket.
 S3_REGION=$(jq -r '.S3_REGION' config.json) # The region of your S3 Bucket.
 
+# Add DigitalOcean's monitoring agent.
+curl -sSL https://agent.digitalocean.com/install.sh | sh
+
 # Create User.
 useradd --create-home --system $USERNAME -p $(perl -e "print crypt($PASSWORD,'sa');") -g sudo
 
@@ -80,11 +83,6 @@ sudo sed -i '/#PasswordAuthentication yes/c\PasswordAuthentication yes' /etc/ssh
 service ssh restart
 
 # Server Config.
-# Setup firewall.
-sudo ufw allow ssh
-sudo ufw --force enable
-ufw allow 443
-ufw allow 27017
 
 # Configure timezones.
 sudo timedatectl set-timezone $TIMEZONE
@@ -112,6 +110,12 @@ sudo git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
 
 # Retrieve Initial Certificate
 sudo /opt/letsencrypt/letsencrypt-auto -d $DOMAIN certonly --standalone --email $EMAIL_ADDRESS --agree-tos --no-eff-email
+
+# Setup firewall.
+sudo ufw allow ssh
+sudo ufw --force enable
+ufw allow 443
+ufw allow 27017
 
 cd $SCRIPT_DIR
 
