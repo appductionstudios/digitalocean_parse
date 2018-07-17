@@ -133,7 +133,7 @@ cd ~
 sudo apt-get -y install cron
 
 # Set Cron Job for auto renewal every Monday at 2:30. Restart Nginx every Monday at 2:35.
-echo "29 2 1 * * service nginx stop\n30 2 1 * * /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n31 2 1 * * service nginx start" > tempcron
+echo "30 2 * * 0 service nginx stop\n31 2 * * 0 /opt/letsencrypt/letsencrypt-auto renew >> /var/log/le-renew.log\n32 2 * * 0 service nginx start" > tempcron
 sudo crontab tempcron
 rm tempcron
 
